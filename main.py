@@ -95,3 +95,100 @@ train = train.drop(columns=['b1_sequence', 'a1_sequence',
 
 
 
+
+# Function to train a model and log results in MLflow
+def train_and_log_model(model, X_train, y_train, X_val, y_val, model_params, model_name):
+    # Train the model
+    model.fit(X_train, y_train)
+
+    # Predict on validation set
+    predictions = model.predict(X_val)
+
+    # Evaluate the model
+    mae = mean_absolute_error(y_val, predictions)
+    mse = mean_squared_error(y_val, predictions)
+    r2 = r2_score(y_val, predictions)
+
+    # Set experiment and tracking URI for MLflow
+    mlflow.set_experiment("Model for COVID")
+    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+
+    with mlflow.start_run(run_name=model_name):
+        # Log model parameters
+        mlflow.log_params(model_params)
+        
+        # Log evaluation metrics
+        mlflow.log_metrics({
+            "MAE": mae,
+            "MSE": mse,
+            "R2": r2
+        })
+
+        # Log the model
+        mlflow.sklearn.log_model(model, model_name)
+
+# Data preparation
+X_train = train.drop(['id_seqpos', 'reactivity'], axis=1)
+y_train = train['reactivity']
+
+# Split training data for validation
+X_train_split, X_val, y_train_split, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+
+# 1. Random Forest Regressor
+rf_params = {
+    "n_estimators": 100,
+    "max_depth": 10,
+    "min_samples_split": 2,
+    "min_samples_leaf": 1,
+    "random_state": 42
+}
+
+rf_model = RandomForestRegressor(**rf_params)
+
+# Train and log Random Forest
+train_and_log_model(rf_model, X_train_split, y_train_split, X_val, y_val, rf_params, "random_forest_model")
+
+
+# 2. Gradient Boosting Regressor
+gb_params = {
+    "n_estimators": 100,
+    "learning_rate": 0.1,
+    "max_depth": 3,
+    "random_state": 42
+}
+gb_model = GradientBoostingRegressor(**gb_params)
+
+# Train and log Gradient Boosting
+train_and_log_model(gb_model, X_train_split, y_train_split, X_val, y_val, gb_params, "gradient_boosting_model")
+
+# 3. Linear Regression
+lr_params = {
+    "fit_intercept": True}
+lr_model = LinearRegression(**lr_params)
+
+# Train and log Linear Regression
+train_and_log_model(lr_model, X_train_split, y_train_split, X_val, y_val, lr_params, "linear_regression_model")
+
+# 4. K-Nearest Neighbors Regressor (KNN Regressor)
+knn_params = {
+    "n_neighbors": 5,
+    "weights": 'uniform',
+    "algorithm": 'auto'
+}
+knn_model = KNeighborsRegressor(**knn_params)
+
+# Train and log KNN Regressor
+train_and_log_model(knn_model, X_train_split, y_train_split, X_val, y_val, knn_params, "knn_model")
+
+
+# 2. Gradient Boosting Regressor
+gb_params = {
+    "n_estimators": 100,
+    "learning_rate": 0.9,
+    "max_depth": 6,
+    "random_state": 42
+}
+gb_model = GradientBoostingRegressor(**gb_params)
+
+# Train and log Gradient Boosting
+train_and_log_model(gb_model, X_train_split, y_train_split, X_val, y_val, gb_params, "gradient_boosting_modelv2")
