@@ -1,0 +1,5 @@
+/.venv
+/main.ipynb
+/mlartifacts
+/mlruns
+/train.csv
